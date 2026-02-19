@@ -1,25 +1,41 @@
 import http from 'node:http'
 import { serveStatic } from './utils/serveStatic.js'
 import { getMockGoldPrice } from './utils/updateGoldPrice.js'
+import { EventEmitter } from 'node:events'
+import { logTransaction } from './utils/logTransaction.js'
+import { parseJSONBody } from './utils/parseJSONBody.js'
 
 const PORT = 8000
 
 const baseDir = import.meta.dirname
 
+const logTransactionEmitter = new EventEmitter()
+// logTransactionEmitter.on("logTransaction", logTransaction)
+
 const server = http.createServer( async (req, res) => {
   if (req.url.startsWith('/api/price')) {
-    res.statusCode = 200
-    res.setHeader("Content-Type", "text/event-stream")
-    res.setHeader("Cache-Control", "no-cache")
-    res.setHeader("Connection", "keep-alive")
+    if (req.method === "GET") {
+      res.statusCode = 200
+      res.setHeader("Content-Type", "text/event-stream")
+      res.setHeader("Cache-Control", "no-cache")
+      res.setHeader("Connection", "keep-alive")
 
-    setInterval(() => {
-      const price = getMockGoldPrice()
+      setInterval(() => {
+        const price = getMockGoldPrice()
 
-      res.write(
-        `data: ${JSON.stringify({ event: "price-updated", price: price})}\n\n`
-      )
-    }, 5000)
+        res.write(
+          `data: ${JSON.stringify({ event: "price-updated", price: price})}\n\n`
+        )
+      }, 5000)
+    } else if (req.method === "POST") {
+      const parsedBody = await parseJSONBody(req)
+      const {
+        date,
+        amount,
+        ppoz
+      } = parsedBody
+      await logTransaction(date, amount, ppoz)
+    }
   } else {
     await serveStatic(req, res, baseDir)
   }
