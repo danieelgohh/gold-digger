@@ -2,6 +2,7 @@ const priceDisplay = document.getElementById("price-display")
 const amountForm = document.getElementById("amount-form")
 const dialogText = document.getElementById("investment-summary")
 const dialog = document.getElementsByTagName("dialog")[0]
+const dismissDialogBtn = dialog.children[2]
 
 // Format the date to a readable string
 const options = {
@@ -23,11 +24,10 @@ eventSource.onmessage = (e) => {
 }
 
 eventSource.onerror = () => {
-  console.log("There was an error fetching the prices")
+  console.error("There was an error fetching the prices")
 }
 
 amountForm.addEventListener("submit", async (e) => {
-  console.log(priceDisplay.textContent)
   e.preventDefault()
   const formData = new FormData(amountForm)
   const transactionDetails = {
@@ -45,11 +45,15 @@ amountForm.addEventListener("submit", async (e) => {
       body: JSON.stringify(transactionDetails),
     })
     if (response.ok) {
-      dialogText.textContent = `You just bought ${amount  / ppoz} for ${amount}. \n You will receive documentation shortly.`
+      dialogText.textContent = `You just bought ${(transactionDetails.amount  / transactionDetails.ppoz).toFixed(4)} for £${transactionDetails.amount}. \n You will receive documentation shortly.`
       dialog.showModal()
     }
   } catch (err) {
     dialogText.textContent = "There was an error completing your transaction. Please try again!"
     console.error("Error:", err)
   }
+})
+
+dismissDialogBtn.addEventListener("click", () => {
+  dialog.close()
 })

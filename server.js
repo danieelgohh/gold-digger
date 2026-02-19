@@ -4,6 +4,7 @@ import { getMockGoldPrice } from './utils/updateGoldPrice.js'
 import { EventEmitter } from 'node:events'
 import { logTransaction } from './utils/logTransaction.js'
 import { parseJSONBody } from './utils/parseJSONBody.js'
+import { sendResponse } from './utils/sendResponse.js'
 
 const PORT = 8000
 
@@ -28,13 +29,18 @@ const server = http.createServer( async (req, res) => {
         )
       }, 5000)
     } else if (req.method === "POST") {
-      const parsedBody = await parseJSONBody(req)
-      const {
-        date,
-        amount,
-        ppoz
-      } = parsedBody
-      await logTransaction(date, amount, ppoz)
+      try {
+        const parsedBody = await parseJSONBody(req)
+        const {
+          date,
+          amount,
+          ppoz
+        } = parsedBody
+        await logTransaction(date, amount, ppoz)
+        sendResponse(res, 201, 'application/json', JSON.stringify(parsedBody))
+      } catch (err) {
+        sendResponse(res, 400, 'application/json', JSON.stringify({ error: err }))
+      }
     }
   } else {
     await serveStatic(req, res, baseDir)
