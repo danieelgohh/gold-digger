@@ -11,7 +11,7 @@ const PORT = 8000
 const baseDir = import.meta.dirname
 
 const logTransactionEmitter = new EventEmitter()
-// logTransactionEmitter.on("logTransaction", logTransaction)
+logTransactionEmitter.on("logTransaction", logTransaction)
 
 const server = http.createServer( async (req, res) => {
   if (req.url.startsWith('/api/price')) {
@@ -36,7 +36,7 @@ const server = http.createServer( async (req, res) => {
           amount,
           ppoz
         } = parsedBody
-        await logTransaction(date, amount, ppoz)
+        logTransactionEmitter.emit("logTransaction", date, amount, ppoz)
         sendResponse(res, 201, 'application/json', JSON.stringify(parsedBody))
       } catch (err) {
         sendResponse(res, 400, 'application/json', JSON.stringify({ error: err }))
